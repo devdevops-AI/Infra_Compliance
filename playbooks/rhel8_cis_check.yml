@@ -1,0 +1,54 @@
+- name: RHEL8 CIS compliance check
+  hosts: all
+  become: yes
+  tasks:
+    - name: Initialize result list
+      set_fact:
+        cis_results: []
+
+    - name: Check chrony package installed
+      shell: rpm -q chrony
+      register: chrony_check
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Record chrony result
+      set_fact:
+        cis_results: "{{ cis_results + [{'id': '2.2.1', 'description': 'chrony package installed', 'status': 'PASS' if chrony_check.rc == 0 else 'FAIL'}] }}"
+
+    - name: Check firewalld enabled
+      command: systemctl is-enabled firewalld
+      register: firewalld_check
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Record firewalld result
+      set_fact:
+        cis_results: "{{ cis_results + [{'id': '3.5.1', 'description': 'firewalld service enabled', 'status': 'PASS' if firewalld_check.rc == 0 and 'enabled' in firewalld_check.stdout else 'FAIL'}] }}"
+
+    - name: Check PASS_MAX_DAYS set to 90
+      shell: grep -E '^PASS_MAX_DAYS\s+90' /etc/login.defs
+      register: passmax_check
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Record PASS_MAX_DAYS result
+      set_fact:
+        cis_results: "{{ cis_results + [{'id': '5.4.1.1', 'description': 'PASS_MAX_DAYS is 90', 'status': 'PASS' if passmax_check.rc == 0 else 'FAIL'}] }}"
+
+    - name: Check PermitRootLogin disabled
+      shell: grep -E '^PermitRootLogin\s+no' /etc/ssh/sshd_config
+      register: rootlogin_check
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Record PermitRootLogin result
+      set_fact:
+        cis_results: "{{ cis_results + [{'id': '5.2.8', 'description': 'PermitRootLogin disabled', 'status': 'PASS' if rootlogin_check.rc == 0 else 'FAIL'}] }}"
+
+    - name: Generate HTML report
+      template:
+        src: ../templates/report.html.j2
+        dest: /tmp/cis_report.html
+      vars:
+        cis_results: "{{ cis_results }}"

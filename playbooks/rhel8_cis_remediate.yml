@@ -1,0 +1,32 @@
+- name: RHEL8 CIS remediation
+  hosts: all
+  become: yes
+  handlers:
+    - name: restart sshd
+      service:
+        name: sshd
+        state: restarted
+  tasks:
+    - name: Ensure chrony is installed
+      package:
+        name: chrony
+        state: present
+
+    - name: Enable and start firewalld
+      service:
+        name: firewalld
+        enabled: yes
+        state: started
+
+    - name: Set PASS_MAX_DAYS to 90
+      lineinfile:
+        path: /etc/login.defs
+        regexp: '^PASS_MAX_DAYS'
+        line: 'PASS_MAX_DAYS 90'
+
+    - name: Disable root SSH login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify: restart sshd

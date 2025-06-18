@@ -1,0 +1,22 @@
+<html>
+<head>
+    <title>CIS Compliance Report</title>
+</head>
+<body>
+    <h1>RHEL 8 CIS Compliance Report</h1>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Description</th>
+            <th>Status</th>
+        </tr>
+        {% for item in cis_results %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.description }}</td>
+            <td>{{ item.status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
